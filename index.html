@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>İki Kişilik • Doğruluk mu Cesaret mi?</title>
+<style>
+:root{color-scheme:dark;--bg:#0b1020;--panel:#151d35;--line:#2b385b;--pink:#ff5ca8;--cyan:#58d8e8;--muted:#a9b5d2;--gold:#ffd36e}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(circle at 15% 0%,#25315b 0,transparent 38%),radial-gradient(circle at 90% 80%,#42254e 0,transparent 35%),var(--bg);font:16px system-ui;color:#f5f7ff;padding:20px}
+main{max-width:850px;margin:auto}.brand{text-align:center;margin:10px 0 24px}.brand small{color:var(--cyan);letter-spacing:3px;font-weight:800}.brand h1{font-size:clamp(28px,6vw,48px);margin:8px 0;background:linear-gradient(90deg,var(--cyan),#fff,var(--pink));color:transparent;background-clip:text}.brand p{color:var(--muted);margin:0}
+.card{background:#151d35eF;border:1px solid var(--line);border-radius:22px;padding:20px;margin:14px 0;box-shadow:0 15px 45px #0003}.hidden{display:none!important}
+.row{display:flex;gap:10px;flex-wrap:wrap}.row>*{flex:1;min-width:130px}label{display:block;color:var(--muted);font-size:13px;margin:0 0 7px}
+input,textarea,button{font:inherit}input,textarea{width:100%;background:#0c1429;border:1px solid var(--line);border-radius:12px;padding:13px;color:white;outline:none}textarea{min-height:95px;resize:vertical}
+button{border:0;border-radius:13px;padding:13px 18px;font-weight:800;cursor:pointer;color:#101529;background:linear-gradient(110deg,var(--cyan),#9af0e8);transition:.15s}button:hover{filter:brightness(1.08);transform:translateY(-1px)}button:disabled{opacity:.4;cursor:not-allowed;transform:none}.secondary{background:#263454;color:white;border:1px solid #3c4c73}.pink{background:linear-gradient(110deg,var(--pink),#ff9ac8);color:#241025}.gold{background:linear-gradient(110deg,#ffd36e,#fff0ae)}
+.players{display:grid;grid-template-columns:1fr 1fr;gap:12px}.player{background:#0d162d;border:1px solid var(--line);padding:14px;border-radius:15px;text-align:center}.player strong{display:block;font-size:18px}.player span{color:var(--muted);font-size:12px}
+.wheel-wrap{display:grid;place-items:center;padding:10px}.wheel{width:min(76vw,330px);aspect-ratio:1;border-radius:50%;border:9px solid #e6edff;position:relative;overflow:hidden;background:conic-gradient(from -90deg,var(--pink) 0 50%,#304d80 50% 100%);box-shadow:0 0 0 7px #ffffff12,0 12px 35px #0008;transition:transform 3.2s cubic-bezier(.12,.75,.15,1)}
+.wheel:after{content:"";position:absolute;inset:42%;border-radius:50%;background:#f6f8ff;border:5px solid #111a32}
+.wlabel{position:absolute;top:24%;left:50%;transform:translateX(-50%);font-weight:900;font-size:clamp(15px,3vw,21px);text-shadow:0 2px 5px #0008}.wlabel.bottom{top:auto;bottom:24%}.pointer{width:0;height:0;border-left:17px solid transparent;border-right:17px solid transparent;border-top:32px solid var(--gold);filter:drop-shadow(0 3px 3px #0008);margin-bottom:-5px;z-index:2}
+.status{color:var(--muted);text-align:center;min-height:24px}.turn{font-size:21px;text-align:center;font-weight:900;margin:8px}.pill{display:inline-block;padding:5px 10px;border-radius:99px;background:#273858;color:var(--cyan);font-size:12px;font-weight:800}
+.prompt{font-size:20px;font-weight:800;line-height:1.4;background:#0c1429;padding:18px;border-radius:15px;border:1px solid var(--line);white-space:pre-wrap}
+#photoPreview{max-width:100%;max-height:260px;border-radius:14px;display:block;margin:12px auto}
+.notice{font-size:12px;color:var(--muted);line-height:1.5}.error{color:#ff9aa9}.success{color:#8ee8c7}
+@media(max-width:520px){body{padding:12px}.card{padding:15px}.players{gap:8px}.player{padding:10px}}
+</style>
+</head>
+<body><main>
+<header class="brand"><small>✦ TWO PLAYER MODE ✦</small><h1>DOĞRULUK MU<br>CESARET Mİ?</h1><p>Çarkı çevir, sıranı belirle, oyuna başla.</p></header>
+
+<section class="card" id="lobby">
+ <h2>Odaya katıl</h2>
+ <div class="row"><div><label>Senin adın</label><input id="name" maxlength="18" placeholder="Oyuncu adın"></div><div><label>Oda kodu</label><input id="roomCode" maxlength="6" placeholder="Örn. A7K2Q" autocapitalize="characters"></div></div>
+ <div class="row" style="margin-top:12px"><button id="createBtn">Oda oluştur</button><button class="secondary" id="joinBtn">Odaya katıl</button></div>
+ <p class="notice">İlk oyuncu oda oluşturur ve kodu diğer oyuncuyla paylaşır. Oda kodunu yalnızca güvendiğin kişiyle paylaş.</p>
+ <p id="lobbyMsg" class="status"></p>
+</section>
+
+<section class="card hidden" id="game">
+ <div class="row" style="align-items:center"><div><span class="pill" id="roomLabel">ODA —</span></div><div style="text-align:right"><button class="secondary" id="copyBtn">Kodu kopyala</button></div></div>
+ <div class="players" style="margin-top:14px">
+  <div class="player"><strong id="p0">Oyuncu 1</strong><span id="p0state">Bağlanıyor…</span></div>
+  <div class="player"><strong id="p1">Oyuncu 2</strong><span id="p1state">Bekleniyor</span></div>
+ </div>
+ <div id="waiting" class="status" style="margin:22px 0">Diğer oyuncunun katılması bekleniyor…</div>
+ <div id="playArea" class="hidden">
+  <div class="wheel-wrap"><div class="pointer"></div><div class="wheel" id="wheel"><span class="wlabel" id="wheelTop">—</span><span class="wlabel bottom" id="wheelBottom">—</span></div></div>
+  <div class="status" id="wheelStatus">Çarkı çevirerek kimin soru soracağını belirleyin.</div>
+  <div style="text-align:center;margin:10px"><button id="spinBtn" class="gold">ÇARKI ÇEVİR</button></div>
+  <div class="turn" id="turnText"></div>
+  <div id="phaseAsk" class="hidden">
+   <p class="notice">Soran oyuncu, cevaplayacak kişiye sorusunu yazsın.</p>
+   <textarea id="questionInput" maxlength="500" placeholder="Sorunu veya cesaret görevini yaz…"></textarea>
+   <button id="sendQuestion" style="width:100%;margin-top:10px">Soruyu gönder</button>
+  </div>
+  <div id="phaseChoose" class="hidden">
+   <div class="prompt" id="questionText"></div>
+   <p class="status">Cevaplayan oyuncu, seçimini yap:</p>
+   <div class="row"><button id="truthBtn">DOĞRULUK</button><button class="pink" id="dareBtn">CESARET</button></div>
+  </div>
+  <div id="phaseAnswer" class="hidden">
+   <div class="prompt" id="answerQuestion"></div>
+   <p class="pill" id="choiceLabel"></p>
+   <textarea id="answerInput" maxlength="1000" placeholder="Cevabını buraya yaz…"></textarea>
+   <button id="sendAnswer" style="width:100%;margin-top:10px">Cevabı gönder</button>
+  </div>
+  <div id="phasePhoto" class="hidden">
+   <div class="prompt" id="dareQuestion"></div>
+   <p class="notice">Görevi tamamladığını göstermek için güvenli, kişisel bilgi içermeyen bir fotoğraf seç. Yüz, adres, okul bilgisi veya özel görüntü yükleme.</p>
+   <input type="file" id="photoInput" accept="image/*">
+   <img id="photoPreview" class="hidden" alt="Seçilen fotoğraf önizlemesi">
+   <button id="sendPhoto" style="width:100%;margin-top:10px">Fotoğrafı gönder</button>
+  </div>
+  <div id="phaseDone" class="hidden">
+   <h2 style="text-align:center">Tur tamamlandı!</h2><div class="prompt" id="resultText"></div>
+   <button id="nextRound" style="width:100%;margin-top:12px">Sonraki tur için çarkı çevir</button>
+  </div>
+ </div>
+ <p id="gameMsg" class="status"></p>
+</section>
+<p class="notice" style="text-align:center">Bu prototipte oda verileri oda kodunu bilen kişilerce görülebilir. Gerçek kullanım için kimlik doğrulama ve daha sıkı güvenlik kuralları gerekir.</p>
+</main>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, doc, setDoc, getDoc, onSnapshot, updateDoc, runTransaction, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const firebaseConfig = {
+ apiKey:"AIzaSyAbXzdbHp72ohyTQXo-P7qV8ryrnW4RRSQ",authDomain:"ttto111.firebaseapp.com",
+ projectId:"ttto111",storageBucket:"ttto111.firebasestorage.app",
+ messagingSenderId:"525475973004",appId:"1:525475973004:web:dbdfde46f9fc22503578a9",
+ measurementId:"G-GN6HPLTBN6"
+};
+const app=initializeApp(firebaseConfig), db=getFirestore(app);
+const $=id=>document.getElementById(id);
+let roomId="",uid="",slot=-1,roomRef=null,unsubscribe=null,room=null,spinning=false,photoData="";
+const show=(id,on=true)=>$(id).classList.toggle("hidden",!on);
+const msg=(s,where="gameMsg",err=false)=>{ $(where).textContent=s; $(where).className="status "+(err?"error":"success"); };
+const cleanName=s=>s.trim().replace(/[<>]/g,"").slice(0,18);
+const code=()=>Math.random().toString(36).slice(2,7).toUpperCase();
+const players=()=>room?.players||[];
+const me=()=>players()[slot];
+const other=()=>players()[1-slot];
+const setPhase=phase=>["phaseAsk","phaseChoose","phaseAnswer","phasePhoto","phaseDone"].forEach(id=>show(id,id===phase));
+function render(){
+ if(!room)return;
+ $("p0").textContent=room.players[0]?.name||"Oyuncu 1";$("p1").textContent=room.players[1]?.name||"Oyuncu 2";
+ $("p0state").textContent=room.players[0]?"Katıldı":"Bekleniyor";$("p1state").textContent=room.players[1]?"Katıldı":"Bekleniyor";
+ $("roomLabel").textContent="ODA "+roomId;
+ const ready=room.players.every(Boolean);show("waiting",!ready);show("playArea",ready);
+ if(!ready)return;
+ $("wheelTop").textContent=room.players[0].name;$("wheelBottom").textContent=room.players[1].name;
+ const s=room.state||{phase:"spin"};
+ $("spinBtn").disabled=spinning||s.phase!=="spin"||s.spinBy===slot;
+ $("wheelStatus").textContent=s.phase==="spin"?(s.spinBy===slot?"Sıra diğer oyuncuda.":"Çarkı çevirerek soru soracak kişiyi belirleyin."):"Tur devam ediyor.";
+ $("turnText").textContent=s.asker!==undefined?`${room.players[s.asker].name} soruyor · ${room.players[1-s.asker].name} cevaplıyor`:"";
+ if(s.phase==="ask"){setPhase(s.asker===slot?"phaseAsk":"");}
+ else if(s.phase==="choose"){setPhase(s.receiver===slot?"phaseChoose":"");$("questionText").textContent=s.question||"";}
+ else if(s.phase==="answer"||s.phase==="dare"){const isReceiver=s.receiver===slot;setPhase(s.phase==="answer"?(isReceiver?"phaseAnswer":""):(isReceiver?"phasePhoto":""));$("answerQuestion").textContent=s.question||"";$("dareQuestion").textContent=s.question||"";$("choiceLabel").textContent="DOĞRULUK";if(!isReceiver)$("turnText").textContent="Cevaplayan oyuncunun yanıtı bekleniyor.";}
+ else if(s.phase==="done"){setPhase("phaseDone");$("resultText").textContent=s.result||"Tur tamamlandı.";}
+ else setPhase("");
+}
+async function enterRoom(create){
+ const name=cleanName($("name").value);if(!name){msg("Önce adını yaz.","lobbyMsg",true);return;}
+ let id=$("roomCode").value.trim().toUpperCase();
+ try{
+  if(create){
+   id=code();roomRef=doc(db,"truthDareRooms",id);
+   await setDoc(roomRef,{players:[{name,uid},null],state:{phase:"spin",spinBy:1,round:0},createdAt:serverTimestamp()});slot=0;
+  }else{
+   if(!/^[A-Z0-9]{5}$/.test(id)){msg("5 karakterli oda kodunu gir.","lobbyMsg",true);return;}
+   roomRef=doc(db,"truthDareRooms",id);
+   await runTransaction(db,async tx=>{
+    const snap=await tx.get(roomRef);if(!snap.exists())throw Error("Oda bulunamadı.");
+    const data=snap.data();if(data.players.some(p=>p?.uid===uid))throw Error("Bu cihaz zaten odada.");
+    const free=data.players.findIndex(p=>!p);if(free<0)throw Error("Oda dolu; yalnızca iki kişi oynayabilir.");
+    data.players[free]={name,uid};tx.update(roomRef,{players:data.players});slot=free;
+   });
+  }
+  roomId=id;$("roomCode").value=id;show("lobby",false);show("game");$("roomLabel").textContent="ODA "+id;
+  if(unsubscribe)unsubscribe();unsubscribe=onSnapshot(roomRef,snap=>{if(snap.exists()){room=snap.data();render();}else msg("Oda bulunamadı.");},e=>msg("Bağlantı hatası: "+e.message));
+ }catch(e){msg(e.message||"Odaya bağlanılamadı.","lobbyMsg",true);}
+}
+uid=localStorage.getItem("td_uid")||crypto.randomUUID();localStorage.setItem("td_uid",uid);
+$("createBtn").onclick=()=>enterRoom(true);$("joinBtn").onclick=()=>enterRoom(false);
+$("copyBtn").onclick=async()=>{try{await navigator.clipboard.writeText(roomId);msg("Oda kodu kopyalandı.");}catch{msg("Oda kodu: "+roomId);}};
+$("spinBtn").onclick=async()=>{
+ if(!room||spinning)return;spinning=true;render();
+ try{
+  const asker=Math.random()<.5?0:1;
+  await runTransaction(db,async tx=>{
+   const snap=await tx.get(roomRef),d=snap.data(),s=d.state;
+   if(s.phase!=="spin"||s.spinBy===slot)throw Error("Önce diğer oyuncunun turunu bekle.");
+   tx.update(roomRef,{state:{phase:"ask",asker,receiver:1-asker,spinBy:1-asker,round:(s.round||0)+1}});
+  });
+  $("wheel").style.transform=`rotate(${1440+(asker===0?0:180)}deg)`;
+ }catch(e){msg(e.message);}
+ spinning=false;render();
+};
+$("sendQuestion").onclick=async()=>{const q=$("questionInput").value.trim();if(!q)return msg("Önce sorunu yaz.");await updateDoc(roomRef,{state:{...room.state,phase:"choose",question:q}});$("questionInput").value="";};
+async function choose(type){await updateDoc(roomRef,{state:{...room.state,phase:type==="truth"?"answer":"dare",choice:type}});}
+$("truthBtn").onclick=()=>choose("truth");$("dareBtn").onclick=()=>choose("dare");
+$("sendAnswer").onclick=async()=>{const a=$("answerInput").value.trim();if(!a)return msg("Cevabını yaz.");await updateDoc(roomRef,{state:{...room.state,phase:"done",result:`${room.players[room.state.receiver].name} doğruluk cevabı:\n${a}`}});$("answerInput").value="";};
+$("photoInput").onchange=async e=>{
+ const f=e.target.files?.[0];if(!f)return;if(!f.type.startsWith("image/"))return msg("Bir görsel dosyası seç.","gameMsg",true);
+ if(f.size>5*1024*1024)return msg("Fotoğraf en fazla 5 MB olabilir.","gameMsg",true);
+ const img=new Image(),url=URL.createObjectURL(f);img.onload=()=>{const c=document.createElement("canvas"),scale=Math.min(1,1000/Math.max(img.width,img.height));c.width=Math.round(img.width*scale);c.height=Math.round(img.height*scale);c.getContext("2d").drawImage(img,0,0,c.width,c.height);photoData=c.toDataURL("image/jpeg",.72);$("photoPreview").src=photoData;show("photoPreview");URL.revokeObjectURL(url);};img.src=url;
+};
+$("sendPhoto").onclick=async()=>{if(!photoData)return msg("Önce bir fotoğraf seç.","gameMsg",true);await updateDoc(roomRef,{state:{...room.state,phase:"done",result:`${room.players[room.state.receiver].name} cesaret görevini tamamladı.`,photo:photoData}});};
+$("nextRound").onclick=async()=>{await updateDoc(roomRef,{state:{phase:"spin",spinBy:room.state.asker,round:room.state.round||0}});$("wheel").style.transform="rotate(0deg)";$("photoInput").value="";$("photoPreview").src="";show("photoPreview",false);};
+</script>
+</body></html>
